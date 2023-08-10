@@ -89,6 +89,8 @@ services:
 # POSTGRES
   db:
     image: postgres
+    volumes:
+      - pg_data:/var/lib/postgresql/data
     restart: always
     environment:
       POSTGRES_PASSWORD: example
@@ -311,3 +313,4 @@ services:
 
 volumes:
   postgres-db-volume:
+  pg_data:
