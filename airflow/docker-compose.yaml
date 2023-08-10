@@ -86,6 +86,20 @@ x-airflow-common:
       condition: service_healthy
 
 services:
+# POSTGRES
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080
+
+# AIRFLOW
   postgres:
     image: postgres:13
     environment:
