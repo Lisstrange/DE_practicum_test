@@ -44,11 +44,11 @@
 #
 # Feel free to modify this file to suit your needs.
 ---
-version: '3.8'
+version: '3'
 x-airflow-common:
   &airflow-common
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
-  # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
+  # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose11.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.6.3}
   # build: .
@@ -73,10 +73,9 @@ x-airflow-common:
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./airflow/plugins:/opt/airflow/plugins
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -86,51 +85,38 @@ x-airflow-common:
       condition: service_healthy
 
 services:
-# POSTGRES
-
-  pgadmin-compose:
-    image: dpage/pgadmin4
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: "postgres@gmail.com"
-      PGADMIN_DEFAULT_PASSWORD: "postgres"
-      PGADMIN_LISTEN_PORT: 80
-      PGADMIN_DEFAULT_SERVER: db
-    ports:
-      - 16543:80
-    depends_on:
-      - db
-
-  db:
-    image: postgres
-    volumes:
-      - pg_data:/var/lib/postgresql_etl/data
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8081:8080
-
-# AIRFLOW
   postgres:
     image: postgres:13
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+      - ./postgres/init_scripts/:/docker-entrypoint-initdb.d/
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 10s
       retries: 5
       start_period: 5s
     restart: always
+
+
+# POSTGRES
+  db:
+    image: postgres
+    ports:
+      - 5442:5432
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: yandex
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./postgres/init_scripts/create_table.sql:/docker-entrypoint-initdb.d/init.sql
 
   redis:
     image: redis:latest
@@ -165,7 +151,7 @@ services:
     <<: *airflow-common
     command: scheduler
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      test: [ "CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"' ] # ХЗ что это, над проверить
       interval: 30s
       timeout: 10s
       retries: 5
@@ -290,6 +276,7 @@ services:
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
+      - .:/sources
 
   airflow-cli:
     <<: *airflow-common
@@ -313,7 +300,7 @@ services:
     profiles:
       - flower
     ports:
-      - "5555:5555"
+      - 5555:5555
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
       interval: 30s
