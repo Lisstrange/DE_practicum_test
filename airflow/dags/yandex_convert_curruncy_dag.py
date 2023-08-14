@@ -196,7 +196,7 @@ def end_script():
     print("Task finished")
 
 
-with DAG(dag_id="yandex-practicum-load-currency", schedule_interval="*/5 * * * *",
+with DAG(dag_id="yandex-practicum-load-currency", schedule_interval="0 */3 * * *",
          default_args=default_args, tags=["yandex", "ETL"], catchup=False
          ) as dag:
     dag.doc_md = __doc__
