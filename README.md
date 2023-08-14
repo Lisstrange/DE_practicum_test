@@ -14,7 +14,7 @@ ETL скрипт для выгрузки данных через api с испо
 5) Перейти во вкладку DAG и запустить скрипт <a>yandex-practicum-load-currency</a>
 
 <p> 
-   <a id="Connection"> Параметры подключения:</a>
+   <a id="Connection"></a> Параметры подключения:
    <ul>
       <li>
          Хост - localhost
