@@ -46,8 +46,8 @@ ETL скрипт для выгрузки данных через api с испо
 3) Написан класс PgHandler для работы с БД через psycorg2. Нужен, чтобы каждый раз не открывать/закрывать соединение.
 4) Создан DAG файл с последовательностью задач (start_bash_task >> get_start_ctn_rows >> load_data >> insert_data >> insert_process_control >> end_task)
 
-Для базовой валидации добавлен PythonSensor - insert_process_control, который позволяет контролировать изменение состояния таблицы
-Передача данных из load_data в insert_data осуществляется через xcom
+Для базовой валидации добавлен ```PythonSensor``` - insert_process_control, который позволяет контролировать изменение состояния таблицы
+Передача данных из load_data в insert_data осуществляется через ```xcom```
 
 <h4> Что стоит доделать: </h4>
 
