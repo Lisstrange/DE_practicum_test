@@ -10,18 +10,15 @@ import requests
 import psycopg2
 import datetime
 
+from airflow.hooks.base import BaseHook
+
 # constants
 SCHEMA = "yandex"
 TABLE = "currency_pair"
-
 BASE_URL = 'https://api.exchangerate.host/'
 CURRENCY_FROM = "BTC"
 CURRENCY_TO = "USD"
 
-PG_HOSTNAME = 'host.docker.internal'
-PG_PORT = '5442'
-PG_USERNAME = 'postgres'
-PG_PSW = 'postgres'
 
 default_args = {
     "owner": "airflow",
@@ -38,25 +35,12 @@ variables = Variable.set(key="etl_variables",
                                 "base_url": BASE_URL},
                          serialize_json=True)
 
-psycorg_conn_args = dict(
-    host=PG_HOSTNAME,
-    user='postgres',
-    password='password',
-    dbname='db',
-    port=5442)
-
 dag_variables = Variable.get("etl_variables", deserialize_json=True)
 
 
 ## PG HANDLER
 class PgHandler:
-    def __init__(self, host, port, user, password, database, options):
-        self.host = host
-        self.port = port
-        self.user = user
-        self.password = password
-        self.database = database
-        self.options = options
+    def __init__(self):
         self.conn = None
         self.cursor = None
         self.connect()
@@ -64,13 +48,14 @@ class PgHandler:
     def connect(self):
 
         try:
+
+            env_conn = BaseHook.get_connection("yandex")
             self.conn = psycopg2.connect(
-                host=self.host,
-                port=self.port,
-                database=self.database,
-                user=self.user,
-                password=self.password,
-                options=self.options
+                host=env_conn.host,
+                port=env_conn.port,
+                database=env_conn.schema,
+                user=env_conn.login,
+                password=env_conn.password
             )
             self.cursor = self.conn.cursor()
             print("Connected to PostgreSQL database!")
@@ -113,12 +98,7 @@ class PgHandler:
         return n_rows
 
 
-pg_client = PgHandler(host=PG_HOSTNAME,
-                      port=PG_PORT,
-                      user="postgres",
-                      password="postgres",
-                      database="yandex",
-                      options="-c search_path=yandex,public")
+pg_client = PgHandler()
 
 
 def get_data(ti):
